@@ -1,0 +1,43 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: f4-aggregator
+  namespace: default
+  labels:
+    dissertation/pipeline: log-pipeline
+    dissertation/stage: "4"
+    dissertation/function: aggregator
+spec:
+  template:
+    metadata:
+      labels:
+        dissertation/function: f4-aggregator
+      annotations:
+        autoscaling.knative.dev/min-scale: "0"
+        autoscaling.knative.dev/max-scale: "3"
+        autoscaling.knative.dev/scale-to-zero-pod-retention-period: "0s"
+    spec:
+      timeoutSeconds: 60
+      containers:
+        - name: user-container
+          image: dev.local/f4-aggregator:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http1
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 5

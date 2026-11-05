@@ -1,0 +1,2 @@
+run,mode,total_curl_s,pipeline_total_ms,f1_ms,f2_ms,f3_ms,f4_ms,cold_stage_count,timestamp
+1,cold,13.063,9907.84,3778.22,2027.55,2074.3,2027.03,4,2026-07-10T12:25:58.699845
