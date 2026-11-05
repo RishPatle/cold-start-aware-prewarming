@@ -60,18 +60,20 @@ Python dependencies: `flask==3.0.3`, `gunicorn==23.0.0` (functions); `pandas`,
 
 ## Repository structure
 
+```
 pipeline/
-├── functions/ Four pipeline stages + orchestrator (Flask apps)
-│ ├── f1-parser/ Regex-parses Apache log lines into structured records
-│ ├── f2-filter/ Classifies records by severity, drops low-value entries
-│ ├── f3-enricher/ Adds metadata via in-memory knowledge-base lookup
-│ ├── f4-aggregator/ Computes summary statistics and raises alerts
-│ └── orchestrator/ Calls f1→f2→f3→f4 in sequence, times each stage
-├── manifests/ Knative Service definitions (one per function)
-├── predictor/ Data prep, feature engineering, model training, sweep
-├── benchmark/ Benchmark harness and statistical analysis
-├── data/ Loghub Apache log (not committed — see Dataset)
-└── results/ Measurement notes
+├── functions/          Four pipeline stages + orchestrator (Flask apps)
+│   ├── f1-parser/      Regex-parses Apache log lines into structured records
+│   ├── f2-filter/      Classifies records by severity, drops low-value entries
+│   ├── f3-enricher/    Adds metadata via in-memory knowledge-base lookup
+│   ├── f4-aggregator/  Computes summary statistics and raises alerts
+│   └── orchestrator/   Calls f1→f2→f3→f4 in sequence, times each stage
+├── manifests/          Knative Service definitions (one per function)
+├── predictor/          Data prep, feature engineering, model training, sweep
+├── benchmark/          Benchmark harness and statistical analysis
+├── data/               Loghub Apache log (not committed — see Dataset)
+└── results/            Measurement notes
+```
 
 
 ## Setup
