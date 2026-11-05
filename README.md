@@ -1,45 +1,61 @@
 # Cold-Start-Aware Scheduling for Serverless Function Pipelines
 
-MSc dissertation project (Newcastle University, MSc Cloud Computing). A framework
-that predicts demand and **selectively pre-warms** serverless pipeline stages to
-hide cold-start latency, while preserving the cost efficiency of scale-to-zero.
+A framework that predicts demand and **selectively pre-warms** Knative serverless
+functions to reduce cold-start latency in multi-stage pipelines, while preserving
+the cost efficiency of scale-to-zero. MSc dissertation project, Newcastle
+University (MSc Cloud Computing).
 
-**Measured result:** selective pre-warming cut median end-to-end pipeline latency
-by **59.9%** on a live Knative pipeline, validated with Mann-Whitney U tests
-(all p < 0.001).
+**Measured result:** on a live four-stage Knative pipeline, selective pre-warming
+cut median end-to-end latency by **59.9%** (10.52 s → 4.22 s) while warming three
+of four stages — close to the 80.0% achieved by warming all four. All pairwise
+differences are statistically significant (Mann-Whitney U, p < 10⁻⁶).
 
-## The problem
-Serverless functions scale to zero when idle, so the next request pays a cold
-start. In pipelines these delays stack: a four-stage pipeline here took ~10s cold
-vs ~0.06s warm, roughly 150x slower.
+---
 
-## The idea
-Warming every stage wastes resources. Cold start dominates the response time of
-light functions but not heavy ones, so this framework warms only the stages where
-cold start dominates, driven by a demand predictor.
+## Overview
 
-## Key results
-| Condition | Median latency | Reduction |
-|-----------|---------------|-----------|
-| Cold baseline | 10.52s | - |
-| Selective (warm F2-F4) | 4.22s | 59.9% |
-| Warm-all | 2.11s | 80.0% |
+Serverless functions scale to zero when idle, so the first request after an idle
+period pays a **cold start** while a fresh instance is built. In pipelines —
+chains of functions where each stage feeds the next — these delays compound. In
+this project a four-stage pipeline took roughly **10 s cold versus 0.06 s warm,
+about 150× slower**.
 
-## Tech stack
-Kubernetes, Knative Serving, Docker, Minikube, Kourier, Python, scikit-learn,
-pandas, NumPy, matplotlib, SciPy.
+Warming every stage hides the delay but wastes the resources that make
+scale-to-zero worthwhile. The key insight: cold start dominates the response time
+of lightweight functions but is only a small fraction for heavier ones. This
+framework therefore warms **only the stages where cold start dominates**, driven
+by a demand predictor, capturing most of the benefit at a fraction of the cost.
+
+## Architecture
+
+Three layers:
+
+- **Offline** — a logistic-regression model is trained on nine months of real log
+  timestamps to forecast whether the next hour will be busy.
+- **Online** — a predictor ("brain") decides when demand is coming; a trigger
+  ("hands") warms the selected downstream stages before the request arrives. An
+  orchestrator calls the four-stage pipeline in sequence and times each stage.
+- **Evaluation** — a purpose-built benchmark harness measures end-to-end latency
+  under cold, selective, and warm-all conditions.
+
+**Stack:** Windows 11 → WSL2 (Ubuntu 24.04) → Docker Engine → Minikube v1.38.1
+(Docker driver, single-node) → Kubernetes v1.34.1 → Knative Serving v1.13.0 →
+Kourier ingress.
+
+## Prerequisites & versions
+
+| Component | Version |
+|-----------|---------|
+| OS | Windows 11 + WSL2 (Ubuntu 24.04) |
+| Docker | Docker Engine (native in WSL2) |
+| Minikube | v1.38.1 (Docker driver, single-node) |
+| Kubernetes | v1.34.1 |
+| Knative Serving | v1.13.0 |
+| Ingress | Kourier |
+| Python | 3.11 |
+| Hardware used | Intel Core Ultra 5 125H, 16 GB RAM (~7.5 GiB to WSL2), 18 cores |
+
+Python dependencies: `flask==3.0.3`, `gunicorn==23.0.0` (functions); `pandas`,
+`numpy`, `scikit-learn`, `scipy`, `matplotlib` (predictor and analysis).
 
 ## Repository structure
-- `functions/` - four-stage pipeline (parser, filter, enricher, aggregator) + orchestrator
-- `manifests/` - Knative service definitions
-- `predictor/` - demand-prediction model, feature engineering, threshold sweep
-- `benchmark/` - benchmark harness and statistical analysis
-- `results/` - measurement notes
-
-## Dataset
-Trained on the Apache access log from the Loghub collection
-(https://github.com/logpai/loghub). Not redistributed here; download separately
-into `data/`.
-
-## Author
-Rishabh Vijaykumar Patle - MSc Cloud Computing, Newcastle University
